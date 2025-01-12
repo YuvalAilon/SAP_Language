@@ -1,0 +1,151 @@
+.start PrgrmStart
+;;----------------------------------------------------;;
+
+;r0 -> Number of Steps
+;r1 -> Current Head Location
+;r2 -> Current State
+;r3 -> Current Tuple Position
+;r4 -> End of Tuples
+;r5 -> 
+;r6 -> 
+;r7 ->
+;r8 -> Current Tuple Character
+;r9 -> Current Head Character
+
+;;----------------------------------------------------;;
+
+Tape:                  .String       "_110101_"
+Head:                  .integer      #0
+NumberTuples:          .integer      #6
+Tuples:                .tuple        \1 1 1 0 r\ 
+T2:                    .tuple        \0 _ 1 _ r\ 
+T3:                    .tuple        \1 0 1 1 r\
+T4:                    .tuple        \1 _ 2 _ l\
+T5:                    .tuple        \2 0 2 0 l\
+T6:                    .tuple        \2 1 2 1 l\
+CurrentState:          .integer      #0
+
+;;----------------------------------------------------;;
+
+Welcome:               .String       "Welcome to Turing!"
+InitialS:              .String       "Initial State: "
+InitialT:              .String       "Initial Tape: "
+EndMessage:            .String       "Turing run complete"
+FinalTape:             .String       "Final Tape: "
+ThatTook:              .String       "That took "
+Steps:                 .String       " steps"
+
+HeadOpen:              .String       "["
+HeadClose:             .String       "]"
+
+;;----------------------------------------------------;;
+
+PrgrmStart:   outs Welcome
+              outci #10
+              outci #10
+              outs InitialS
+              printi r1
+              outci #10
+              outs InitialT
+              outs Tape
+              outci #10
+              outci #10
+
+InitialSetUp: jsr SetHead
+              movmr CurrentState r2
+              movar Tuples r3
+              movmr NumberTuples r5
+              mulir #5 r5
+              movar Tuples r4
+              addrr r5 r4
+              clrr r5
+
+FindTuple:    jsr CmprRule
+              cmprr r3 r4 ;; Current Tuple Position == End of Tuples
+              jmpz PrgrmEnd
+              jmp FindTuple
+
+
+PrgrmEnd:     outci #10
+              outci #10
+              outs EndMessage
+              outci #10
+              outs FinalTape
+              outs Tape
+              outci #10
+              outs ThatTook
+              printi r0
+              outs Steps
+              halt
+    
+;;----------------------------------------------------;;
+
+SetHead:      addir #1 r1
+              ret
+
+;;----------------------------------------------------;;
+
+CmprRule:     movxr r3 r8 ;; r8 -> First Tuple Character
+              cmprr r2 r8 ;;r2 -> Current State | r8 -> First Tuple Character
+              jmpz CmprRule2
+              addir #5 r3 
+              ret
+CmprRule2:    addir #1 r3 
+              movxr r3 r8 ;; r8 -> Second Tuple Character
+              movxr r1 r9 ;; r9 -> Current Head Character
+              cmprr r8 r9
+
+              jmpz DoRule
+              addir #4 r3
+              ret
+DoRule:       jsr PrinterSetUp
+              addir #1 r3 
+              movxr r3 r8 ;; r8 -> Third Tuple Character
+              movrr r8 r2 ;; r2 -> Current State (updating state)
+              addir #1 r3 
+              movxr r3 r8 ;; r8 -> Fourth Tuple Character
+              movrx r8 r1 ;; r1 -> Head Location
+              addir #1 r3 
+              movxr r3 r8 ;; r8 -> Fifth Tuple Character
+              addrr r8 r1
+              addir #1 r0 ;; Adds 1 to Steps
+              outci #10
+
+              ;; Resets Current Tuple Position
+              movar Tuples r3
+              ret
+              
+;;----------------------------------------------------;; 
+
+;r5 -> Head Print Location in Memory (starts at 1)
+;r6 -> Length of Tape
+;r7 -> Character
+;r8 -> 
+;r9 -> 
+
+
+PrinterSetUp: movir #1 r5
+              movxr r6 r6
+              addir #1 r6
+Printer:      cmprr r1 r5
+              movxr r5 r7
+              jmpz BracketPrint
+              outcr r7
+              addir #1 r5
+              cmprr r5 r6
+              jmpne Printer
+              ret
+         
+
+BracketPrint: outs HeadOpen
+              outcr r7
+              outs HeadClose
+              addir #1 r5
+              cmprr r5 r6
+              jmpne Printer
+              ret
+              jmp Printer
+
+;;----------------------------------------------------;;
+
+.end

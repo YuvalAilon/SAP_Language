@@ -1,0 +1,31 @@
+.Start Run
+Base: .Integer #3
+Exponent: .Integer #4
+Mess1: .String " raised to the power of "
+Mess2: .String " is "
+Run: movmr Base r0
+movmr Exponent r1
+jsr Powerer
+halt
+Powerer: addir #1 r4
+movrr r1 r3
+subir #1 r3
+movrr r0 r2
+loop: mulrr r0 r2
+subir #1 r3
+cmprr r3 r9
+jmpne loop
+jsr Print
+addir #1 r1
+cmpir #10 r4
+jmpne Powerer
+ret
+Print: printi r0
+outs Mess1
+printi r1
+outs Mess2
+printi r2
+movir #10 r9
+outcr r9
+ret
+.end

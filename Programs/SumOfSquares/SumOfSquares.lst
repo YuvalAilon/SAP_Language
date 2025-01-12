@@ -1,0 +1,49 @@
+;;─────────────────────<<PROGRAMS/SOSLOOP LST>>─────────────────────;;
+0  :                 | .start SOSLoopStr 
+1  :  10             | loopTimes: .integer #10 
+2  :  10             | newLine: .integer #10 
+3  :  29  84 104 101 | SOSMessage1: .string "The sum of squares from 1 to " 
+33 :   4  32 105 115 | SOSMessage2: .string " is " 
+38 :   5   1   0     | SOSLoopStr: movir #1 r0 
+41 :   8   0   5     | movmr loopTimes r5 
+44 :  39  65         | SOSLoop: jsr SOSStart 
+46 :   6   4   0     | movrr r4 r0 
+49 :   1   1         | clrr r1 
+51 :   1   2         | clrr r2 
+53 :   1   3         | clrr r3 
+55 :   1   4         | clrr r4 
+57 :  12   1   0     | addir #1 r0 
+60 :  35   0   0     | cmpmr loopTimes r0 
+63 :  57  43         | jmpne SOSLoop 
+65 :   0             | SOSLoopEnd: halt 
+66 :   5   1   1     | SOSStart: movir #1 r1 
+69 :   6   0   4     | movrr r0 r4 
+72 :   6   1   2     | SOS: movrr r1 r2 
+75 :  21   1   2     | mulrr r1 r2 
+78 :  13   2   3     | addrr r2 r3 
+81 :  12   1   1     | addir #1 r1 
+84 :  16   1   0     | subir #1 r0 
+87 :  33   0   0     | cmpir #0 r0 
+90 :  36  71         | jmpn SOS 
+92 :  37  93         | jmpz SOSDone 
+94 :  55   2         | SOSDone: outs SOSMessage1 
+96 :  49   4         | printi r4 
+98 :  55  32         | outs SOSMessage2 
+100:  49   3         | printi r3 
+102:  44  10         | outci #10 
+104:  40             | ret 
+105:                 | .end 
+
+
+;;───<<SYMBOL TABLE>>───;;
+| 2   | SOSMESSAGE1
+| 32  | SOSMESSAGE2
+| 1   | NEWLINE
+| 93  | SOSDONE
+| 43  | SOSLOOP
+| 65  | SOSSTART
+| 71  | SOS
+| 64  | SOSLOOPEND
+| 0   | LOOPTIMES
+| 37  | SOSLOOPSTR
+;;──────────────────────;;

@@ -89,7 +89,7 @@ struct SAPVM {
       case	 .AOJNZ : aojnz(NextByte() , NextByte())
       case	 .CMPIR : cmpir(NextByte() , NextByte())
       case	 .CMPRR : cmprr(NextByte() , NextByte())
-      case	 .CMPMR : cmpir(NextByte() , NextByte())
+      case	 .CMPMR : cmpmr(NextByte() , NextByte())
       case	 .JMPN  :  jmpn(NextByte())
       case	 .JMPZ  :  jmpz(NextByte())
       case	 .JMPP  :  jmpp(NextByte())

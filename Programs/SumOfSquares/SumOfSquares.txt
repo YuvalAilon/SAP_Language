@@ -1,0 +1,39 @@
+.start SOSLoopStr
+
+loopTimes:      .integer        #10
+newLine:        .integer        #10
+SOSMessage1:    .string         "The sum of squares from 1 to "
+SOSMessage2:    .string         " is "
+
+
+SOSLoopStr: movir #1 r0
+            movmr loopTimes r5
+SOSLoop:    jsr SOSStart
+            movrr r4 r0
+            clrr r1
+            clrr r2
+            clrr r3
+            clrr r4
+            addir #1 r0
+            cmpmr loopTimes r0
+            jmpne SOSLoop 
+SOSLoopEnd: halt
+
+SOSStart:   movir #1 r1
+            movrr r0 r4
+SOS:        movrr r1 r2
+            mulrr r1 r2
+            addrr r2 r3
+            addir #1 r1
+            subir #1 r0
+            cmpir #0 r0
+            jmpn SOS
+            jmpz SOSDone  
+SOSDone:    outs SOSMessage1
+            printi r4
+            outs SOSMessage2
+            printi r3
+            outci #10
+            ret
+            
+.end
