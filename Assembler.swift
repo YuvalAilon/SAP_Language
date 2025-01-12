@@ -6,7 +6,14 @@ class Assembler {
   var hadError : Bool
   var programLength: Int
   var programStart: Int
-  let legalDirectives = [".START" , ".END" , ".INTEGER" , ".STRING" , ".ALLOCATE"]
+  let legalDirectives = [
+    ".START",
+    ".END",
+    ".INTEGER",
+    ".STRING",
+    ".TUPLE",
+    ".ALLOCATE"
+  ]
   var symTable: [String: Int]
   var pc: Int
 
@@ -113,6 +120,9 @@ class Assembler {
     if line.contains("\"") {
       return TokenLine(pc, createTokenLnFromChunks(makeQuoteArray(line)))
     }
+    if line.contains("\\"){
+      return TokenLine(pc, createTokenLnFromChunks(makeTupleArray(line)))
+    }
     return TokenLine(pc, createTokenLnFromChunks(splitStringIntoParts(line))) 
   }
 
@@ -134,6 +144,26 @@ class Assembler {
     var returnArray = splitStringIntoParts(quoteArray.remove(at: 0))
     returnArray.append(contentsOf: quoteArray)
     
+    return returnArray
+  }
+
+  func makeTupleArray(_ line: String) -> [String]{
+    var tupleArray: [String] = []
+    let lineArray = Array(line)
+    var temp: String = ""
+    for i in 0..<lineArray.count {
+      if lineArray[i] != "\\" {
+      temp += String(lineArray[i])
+      } else {
+      tupleArray.append(temp)
+      temp = "\\"
+      }
+    }
+
+    var returnArray = splitStringIntoParts(tupleArray.remove(at: 0))
+    returnArray.append(contentsOf: tupleArray)
+    returnArray[returnArray.count - 1] += "\\"
+
     return returnArray
   }
   
@@ -164,6 +194,8 @@ class Assembler {
         }
       case "#":
         return CreateImmediateInt(chunkArray)
+      case "\\":
+        return CreateImmediateTupleToken(chunkArray)
       case ";":
         return CreateCommentToken(chunkArray)
       default : break;
@@ -190,6 +222,22 @@ class Assembler {
 
   func CreateImmediateStringToken(_ chunkArray: [String]) -> Token{
     return Token(.ImmediateString , nil , stringFromArraySub(chunkArray, 1, chunkArray.count - 1 ) )
+  }
+
+  func CreateImmediateTupleToken(_ chunkArray: [String]) -> Token{
+    if chunkArray.count == 11 && (chunkArray[9] == "r" || chunkArray[9] == "l" || chunkArray[9] == "n") {
+      if chunkArray[0] == "\\" && chunkArray[10] == "\\"{
+        var TupleString = ""
+        for char in chunkArray{
+          if char != "\\" && char != " "{
+            TupleString += char
+          }
+        }
+        return Token(.ImmediateTuple , nil , TupleString)
+      }
+    }
+    return Token(.BadTupleToken , nil , stringFromArraySub(chunkArray, 1, chunkArray.count - 1 ) )
+    
   }
 
   func CreateCommentToken(_ chunkArray: [String]) -> Token{
@@ -227,7 +275,6 @@ class Assembler {
     for tokenIndex in 0 ..< removeComments(tokenLine).line.count {
       if tokenLine.line[tokenIndex].type == .Label && symTable[tokenLine.line[tokenIndex].stringValue!.uppercased()] == nil{
         returnTokenLine.line[tokenIndex] = Token(.BadLabelToken, tokenLine.line[tokenIndex].intValue, tokenLine.line[tokenIndex].stringValue)
-        //returnTokenLine.line[tokenIndex] = Token(tokenLine.line[tokenIndex].type, -1, tokenLine.line[tokenIndex].stringValue)
       }
     }
     return(returnTokenLine)
@@ -260,6 +307,7 @@ class Assembler {
           case .Instruction: pc += 1
           case .ImmediateInt: pc += 1   
           case .ImmediateString: pc += (token.stringValue!.count + 1)
+          case .ImmediateTuple: pc += 5
           case .Register: pc += 1    
           case .Directive: break      
           case .BadDirective: pc = -1 
@@ -267,6 +315,7 @@ class Assembler {
           case .BadIntToken: pc = -1
           case .BadInstructionToken: pc = -1
           case .BadStringToken: pc = -1
+          case .BadTupleToken: pc = -1
           case .BadRegisterToken: pc = -1
           case .BadLabelDefinition: pc = -1
         }
@@ -287,7 +336,9 @@ class Assembler {
           case .ImmediateInt: validatedTokenLine.line[0] = Token(.BadIntToken, tokenLine.line[0].intValue, nil )  
                               return validatedTokenLine
           case .ImmediateString: validatedTokenLine.line[0] = Token(.BadStringToken, nil , tokenLine.line[0].stringValue )
-                                 return validatedTokenLine
+                              return validatedTokenLine
+          case .ImmediateTuple: validatedTokenLine.line[0] = Token(.BadTupleToken, nil , tokenLine.line[0].stringValue )
+                              return validatedTokenLine
           case .Register: validatedTokenLine.line[0] = Token(.BadRegisterToken, tokenLine.line[0].intValue, nil ) 
                           return validatedTokenLine
           case .Directive:  
@@ -320,6 +371,13 @@ class Assembler {
       switch tokenLine.line[1].stringValue!.uppercased(){
         case "STRING": 
           if removeComments(tokenLine).line.count == 3 && tokenLine.line[2].type == .ImmediateString{
+            return tokenLine
+          }else{
+            validatedTokenLine.line[0].type = .BadLabelDefinition
+            return validatedTokenLine
+          }
+        case "TUPLE": 
+          if removeComments(tokenLine).line.count == 3 && tokenLine.line[2].type == .ImmediateTuple{
             return tokenLine
           }else{
             validatedTokenLine.line[0].type = .BadLabelDefinition
@@ -408,6 +466,7 @@ class Assembler {
           case .Instruction: binArray.append(token.intValue!) 
           case .ImmediateInt: binArray.append(token.intValue!)  
           case .ImmediateString: binArray.append(contentsOf: stringToBinary(token.stringValue!))
+          case .ImmediateTuple: binArray.append(contentsOf: tupletoBinary(token.stringValue!))
           case .Register: binArray.append(token.intValue!)  
           default: break
         } 
@@ -601,6 +660,23 @@ class Assembler {
     return returnArray
   }
 
+  func tupletoBinary(_ string: String) -> [Int]{
+    let tuple = Array(string)
+    var returnArray = [Int]()
+    returnArray.append(Int(String(tuple[0])) ?? -1)
+    returnArray.append(characterToUnicodeValue(tuple[1]))
+    returnArray.append(Int(String(tuple[2])) ?? -1)
+    returnArray.append(characterToUnicodeValue(tuple[3]))
+    if tuple[4] == "r"{
+      returnArray.append(1)
+    }else if tuple[4] == "l"{
+      returnArray.append(-1)
+    }else{
+      returnArray.append(0)
+    }
+    return returnArray
+  }
+
 
 
   
@@ -628,6 +704,7 @@ enum TokenType {
   case Instruction 
   case ImmediateInt    
   case ImmediateString 
+  case ImmediateTuple
   case Register        
   case Directive       
   case BadDirective
@@ -635,6 +712,7 @@ enum TokenType {
   case BadIntToken
   case BadInstructionToken
   case BadStringToken
+  case BadTupleToken
   case BadRegisterToken
   case BadLabelDefinition
 }
@@ -700,7 +778,7 @@ struct Token : CustomStringConvertible{
   }
 
   func isBad() -> Bool{
-    if type == .BadDirective || type == .BadLabelToken || type == .BadIntToken || type == .BadInstructionToken || type == .BadStringToken || type == .BadRegisterToken  || type == .BadLabelDefinition {
+    if type == .BadDirective || type == .BadLabelToken || type == .BadIntToken || type == .BadInstructionToken || type == .BadStringToken || type == .BadRegisterToken  || type == .BadLabelDefinition || type == .BadTupleToken {
       return true
     }
     return false
@@ -717,6 +795,7 @@ struct Token : CustomStringConvertible{
       case .BadIntToken: rawErrorMessage = "This INTEGER definition is not in the correct location"
       case .BadInstructionToken: rawErrorMessage = "The INSTRUCTION \(stringValue ?? "") has incorrect arguments"
       case .BadStringToken: rawErrorMessage = "This STRING definition is not in the correct location"
+      case .BadTupleToken: rawErrorMessage = "This TUPLE definition is not in the correct location or does not have correct arguments"
       case .BadRegisterToken: rawErrorMessage = "This REGISTER is not in the correct location"
       case .BadLabelDefinition: rawErrorMessage = "This LABEL DEFINITION is not in the correct location, or has incorrect arguments"
       default: rawErrorMessage = "idk how you even did this -_-"
@@ -745,6 +824,7 @@ struct Token : CustomStringConvertible{
       case .ImmediateInt , .BadIntToken : return ("#" + String(intValue ?? 0))
       case .LabelDefinition , .BadLabelDefinition: return ((stringValue ?? "") + ":")
       case .ImmediateString , .BadStringToken: return ("\"" + (stringValue ?? "") + "\"")
+      case .ImmediateTuple , .BadTupleToken: return ("\\" + (stringValue ?? "") + "\\")
       case .Directive, .BadDirective: return ("." + (stringValue ?? ""))
       case .Register, .BadRegisterToken: return("r" + String(intValue ?? 0))
     }
@@ -760,10 +840,3 @@ func removeComments(_ tokenLine: TokenLine) -> TokenLine {
     }
     return returnTokenLine
   }
-
-//struct Tuple {}
-/*  This is snippet of code that may be useful in the future.
-if currentToken.type == TokenType.directive {
-assembleDirective(currentToken)
-continue
-}*/ 
