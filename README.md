@@ -271,7 +271,7 @@ Length of string
 ### Integer
 The datatype stored in memory and registers.
 ### Tuple
-A "Turing Tuple", created to aid with implementation of a turing machine. A tuple holds 5 characters and is denoted with the use of backslash characters:
+The "Turing Tuple" was created to aid with implementation of a turing machine. A tuple holds 5 characters and is denoted with the use of backslash characters:
 
 ```
 \a b c d e\
