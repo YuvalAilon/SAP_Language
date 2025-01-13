@@ -2,7 +2,7 @@
 
 ## Project Description
 
-This program is an assembler and compiler for the SAP (Simple Assembly Programming) Language. A language based on the language of the [PDP-11](https://en.wikipedia.org/wiki/PDP-11).
+This program is an assembler and compiler for the SAP (Simple Assembly Programming) Language. SAP is a language based on the language of the [PDP-11](https://en.wikipedia.org/wiki/PDP-11).
 
 This project contains three sample programs:
 - An exponent function
